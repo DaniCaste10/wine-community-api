@@ -2,8 +2,6 @@
 
 API REST para una comunidad online de gestión y recomendación de vinos, desarrollada con Spring Boot. Los usuarios pueden construir su propia lista de vinos puntuados, seguirse entre sí mediante solicitudes de seguimiento, consultar estadísticas de sus puntuaciones y recibir recomendaciones personalizadas.
 
-Proyecto realizado para la asignatura **Sistemas Orientados a Servicios** (curso 2025-26) de la Universidad Politécnica de Madrid.
-
 ## Índice
 
 - [Descripción](#descripción)
@@ -12,7 +10,7 @@ Proyecto realizado para la asignatura **Sistemas Orientados a Servicios** (curso
 - [Arquitectura](#arquitectura)
 - [Modelo de datos](#modelo-de-datos)
 - [Diseño de la API](#diseño-de-la-api)
-- [Ejemplos de uso](#ejemplos-de-uso)
+- [Ejemplo rápido](#ejemplo-rápido)
 - [Decisiones de diseño](#decisiones-de-diseño)
 
 ## Descripción
@@ -468,11 +466,11 @@ Los enlaces se construyen en los **assemblers** (`RepresentationModelAssemblerSu
 | `400 Bad Request` | Alta de un usuario menor de edad. El cuerpo contiene el mensaje de error. |
 | `404 Not Found` | El recurso solicitado no existe (usuario, vino de la lista o solicitud), o un listado de usuarios no devuelve resultados. |
 
-## Ejemplos de uso
+## Ejemplo rápido
 
-Los ejemplos se han ejecutado con Postman contra `http://localhost:8080` y suponen una base de datos recién creada. Los identificadores (`1`, `2`...) son los que asigna la base de datos al crear los registros en el orden en que aparecen. Algunas respuestas se muestran resumidas con `...`.
+Con la API en marcha en `http://localhost:8080` (las instrucciones de instalación y ejecución están en [INSTALACION.md](INSTALACION.md)), estas dos peticiones muestran su funcionamiento básico. Se pueden lanzar con Postman o con cualquier otro cliente HTTP.
 
-### 1. Alta de usuarios
+**1. Dar de alta un usuario**
 
 ```http
 POST /usuarios
@@ -490,54 +488,12 @@ HTTP/1.1 201 Created
 Location: http://localhost:8080/usuarios/1
 ```
 
-La respuesta no lleva cuerpo. Si se repite la petición con `ana456` (`1998-03-20`, `ana@email.com`), el usuario creado recibe el identificador 2.
+La respuesta no lleva cuerpo: la cabecera `Location` indica la URI del usuario creado.
 
-**Alta de un menor de edad.** Con una fecha de nacimiento que no alcanza los 18 años:
-
-```http
-POST /usuarios
-Content-Type: application/json
-
-{
-    "nombreUsuario": "joven01",
-    "fechaNacimiento": "2015-01-01",
-    "email": "joven@email.com"
-}
-```
+**2. Listar usuarios filtrando por nombre**
 
 ```http
-HTTP/1.1 400 Bad Request
-
-El usuario debe ser mayor de edad
-```
-
-### 2. Consultar un usuario
-
-```http
-GET /usuarios/1
-```
-
-```json
-{
-    "_links": {
-        "self":        { "href": "http://localhost:8080/usuarios/1" },
-        "vinos":       { "href": "http://localhost:8080/usuarios/1/vinos?page=0&size=10{&desde,hasta,tipo,bodega,origen,anada,uva}", "templated": true },
-        "seguidos":    { "href": "http://localhost:8080/usuarios/1/seguidos?page=0&size=10{&nombre}", "templated": true },
-        "solicitudes": { "href": "http://localhost:8080/usuarios/1/solicitudes?page=0&size=10" }
-    },
-    "email": "mario@email.com",
-    "fechaNacimiento": "1995-06-15",
-    "id": 1,
-    "nombreUsuario": "mario123"
-}
-```
-
-Si el usuario no existe, por ejemplo con `GET /usuarios/99`, la respuesta es `404 Not Found` sin cuerpo.
-
-### 3. Buscar usuarios por nombre
-
-```http
-GET /usuarios?nombre=ana
+GET /usuarios?nombre=mar
 ```
 
 ```json
@@ -546,353 +502,23 @@ GET /usuarios?nombre=ana
         "usuarioList": [
             {
                 "_links": { ... },
-                "email": "ana@email.com",
-                "fechaNacimiento": "1998-03-20",
-                "id": 2,
-                "nombreUsuario": "ana456"
-            }
-        ]
-    },
-    "_links": {
-        "self": { "href": "http://localhost:8080/usuarios?nombre=ana&page=0&size=10" }
-    },
-    "page": { "number": 0, "size": 10, "totalElements": 1, "totalPages": 1 }
-}
-```
-
-Si ningún usuario contiene el texto buscado (por ejemplo, `GET /usuarios?nombre=zzz`), la respuesta es `404 Not Found`.
-
-### 4. Añadir un vino a la lista y consultarlo
-
-```http
-POST /usuarios/1/vinos?puntuacion=8.5
-Content-Type: application/json
-
-{
-    "nombre": "Vega Sicilia Único",
-    "bodega": "Vega Sicilia",
-    "anada": 2015,
-    "origen": "Ribera del Duero",
-    "tipo": "Tinto",
-    "uvas": [
-        { "nombreUva": "Tempranillo", "porcentaje": 85.0 },
-        { "nombreUva": "Cabernet Sauvignon", "porcentaje": 15.0 }
-    ]
-}
-```
-
-```http
-HTTP/1.1 201 Created
-```
-
-La respuesta incluye la cabecera `Location` y no lleva cuerpo. Para consultar la lista:
-
-```http
-GET /usuarios/1/vinos
-```
-
-```json
-{
-    "_embedded": {
-        "usuarioVinoList": [
-            {
-                "_links": {
-                    "self": { "href": "http://localhost:8080/usuarios/1/vinos?page=0&size=10{&desde,hasta,tipo,bodega,origen,anada,uva}", "templated": true }
-                },
-                "fechaAdicion": "2026-04-14",
+                "email": "mario@email.com",
+                "fechaNacimiento": "1995-06-15",
                 "id": 1,
-                "puntuacion": 8.5,
-                "usuario": {
-                    "email": "mario@email.com",
-                    "fechaNacimiento": "1995-06-15",
-                    "id": 1,
-                    "nombreUsuario": "mario123"
-                },
-                "vino": {
-                    "anada": 2015,
-                    "bodega": "Vega Sicilia",
-                    "id": 1,
-                    "nombre": "Vega Sicilia Único",
-                    "origen": "Ribera del Duero",
-                    "tipo": "Tinto",
-                    "uvas": [
-                        { "nombreUva": "Tempranillo", "porcentaje": 85.0 },
-                        { "nombreUva": "Cabernet Sauvignon", "porcentaje": 15.0 }
-                    ]
-                }
+                "nombreUsuario": "mario123"
             }
         ]
     },
     "_links": {
-        "self": { "href": "http://localhost:8080/usuarios/1/vinos?page=0&size=10" }
+        "self": { "href": "http://localhost:8080/usuarios?nombre=mar&page=0&size=10" }
     },
     "page": { "number": 0, "size": 10, "totalElements": 1, "totalPages": 1 }
 }
 ```
 
-Observa que el campo `id` de la entrada de la lista (`1`) es el que se usa para modificar la puntuación o eliminar el vino de la lista.
+El listado está paginado y cada usuario incluye enlaces a sus recursos relacionados (véase [Navegabilidad (HATEOAS) y paginación](#navegabilidad-hateoas-y-paginación)). Los listados de vinos admiten además filtros por fechas, tipo, bodega, origen, añada y uva (véase [Parámetros de consulta](#parámetros-de-consulta)).
 
-**Con filtros.** `GET /usuarios/1/vinos?tipo=Tinto&anada=2015` devuelve el mismo resultado, porque el vino cumple ambas condiciones. En cambio, `GET /usuarios/1/vinos?tipo=Blanco` no encuentra ningún vino y devuelve una página vacía:
-
-```json
-{
-    "_links": {
-        "self": { "href": "http://localhost:8080/usuarios/1/vinos?tipo=Blanco&page=0&size=10" }
-    },
-    "page": { "number": 0, "size": 10, "totalElements": 0, "totalPages": 0 }
-}
-```
-
-### 5. Modificar la puntuación de un vino
-
-```http
-PUT /usuarios/1/vinos/1/puntuacion?puntuacion=9.5
-```
-
-```json
-{
-    "_links": {
-        "self": { "href": "http://localhost:8080/usuarios/1/vinos?page=0&size=10{&desde,hasta,tipo,bodega,origen,anada,uva}", "templated": true }
-    },
-    "fechaAdicion": "2026-04-14",
-    "id": 1,
-    "puntuacion": 9.5,
-    "usuario": { ... },
-    "vino": { ... }
-}
-```
-
-La puntuación pasa de `8.5` a `9.5`, y la fecha de adición y el resto de datos no cambian. El segundo `1` de la URI es el identificador de la entrada de la lista.
-
-### 6. Estadísticas de puntuaciones
-
-```http
-GET /usuarios/1/vinos/estadisticas
-```
-
-```
-9.5
-```
-
-La respuesta es la nota media de los vinos del usuario, que en este caso es la del único vino puntuado. Con un filtro que no coincide con ningún vino, como `GET /usuarios/1/vinos/estadisticas?tipo=Blanco`, la respuesta es `0.0`.
-
-### 7. Solicitar, consultar y aceptar un seguimiento
-
-**Mario solicita seguir a Ana:**
-
-```http
-POST /usuarios/1/solicitudes
-Content-Type: application/json
-
-{
-    "seguidoId": 2
-}
-```
-
-```http
-HTTP/1.1 201 Created
-```
-
-**Ana consulta sus solicitudes pendientes:**
-
-```http
-GET /usuarios/2/solicitudes
-```
-
-```json
-{
-    "_embedded": {
-        "solicitudSeguimientoList": [
-            {
-                "_links": {
-                    "self": { "href": "http://localhost:8080/usuarios/2/solicitudes?page=0&size=10" }
-                },
-                "estado": "PENDIENTE",
-                "fechaSolicitud": "2026-04-14",
-                "id": 1,
-                "receptor": {
-                    "email": "ana@email.com",
-                    "fechaNacimiento": "1998-03-20",
-                    "id": 2,
-                    "nombreUsuario": "ana456"
-                },
-                "solicitante": {
-                    "email": "mario@email.com",
-                    "fechaNacimiento": "1995-06-15",
-                    "id": 1,
-                    "nombreUsuario": "mario123"
-                }
-            }
-        ]
-    },
-    "_links": {
-        "self": { "href": "http://localhost:8080/usuarios/2/solicitudes?page=0&size=10" }
-    },
-    "page": { "number": 0, "size": 10, "totalElements": 1, "totalPages": 1 }
-}
-```
-
-**Ana acepta la solicitud** (el `1` final de la URI es el `id` de la solicitud):
-
-```http
-PUT /usuarios/2/solicitudes/1/aceptar
-```
-
-```json
-{
-    "estado": "ACEPTADA",
-    "fechaSolicitud": "2026-04-14",
-    "id": 1,
-    "receptor": {
-        "email": "ana@email.com",
-        "fechaNacimiento": "1998-03-20",
-        "id": 2,
-        "nombreUsuario": "ana456"
-    },
-    "solicitante": {
-        "email": "mario@email.com",
-        "fechaNacimiento": "1995-06-15",
-        "id": 1,
-        "nombreUsuario": "mario123"
-    }
-}
-```
-
-**Mario ya sigue a Ana**, así que ella aparece en su lista de seguidos:
-
-```http
-GET /usuarios/1/seguidos
-```
-
-```json
-{
-    "_embedded": {
-        "usuarioList": [
-            {
-                "_links": { ... },
-                "email": "ana@email.com",
-                "fechaNacimiento": "1998-03-20",
-                "id": 2,
-                "nombreUsuario": "ana456"
-            }
-        ]
-    },
-    "_links": {
-        "self": { "href": "http://localhost:8080/usuarios/1/seguidos?page=0&size=10" }
-    },
-    "page": { "number": 0, "size": 10, "totalElements": 1, "totalPages": 1 }
-}
-```
-
-Para dejar de seguirla: `DELETE /usuarios/1/seguidos/2`, que responde `204 No Content`.
-
-### 8. Rechazar una solicitud
-
-Ahora es Ana quien solicita seguir a Mario, y Mario rechaza la solicitud.
-
-```http
-POST /usuarios/2/solicitudes
-Content-Type: application/json
-
-{
-    "seguidoId": 1
-}
-```
-
-```http
-HTTP/1.1 201 Created
-```
-
-Mario consulta sus solicitudes pendientes (`GET /usuarios/1/solicitudes`), donde aparece la nueva solicitud con `id` 2, y la rechaza:
-
-```http
-PUT /usuarios/1/solicitudes/2/rechazar
-```
-
-```json
-{
-    "estado": "RECHAZADA",
-    "fechaSolicitud": "2026-04-14",
-    "id": 2,
-    "receptor": { "id": 1, "nombreUsuario": "mario123", ... },
-    "solicitante": { "id": 2, "nombreUsuario": "ana456", ... }
-}
-```
-
-La solicitud pasa a `RECHAZADA` y no se crea ninguna relación de seguimiento: `GET /usuarios/1/solicitudes` devuelve ahora una página vacía y Ana no aparece como seguidora de Mario.
-
-### 9. Recomendaciones personalizadas
-
-```http
-GET /usuarios/1/vinos/recomendaciones
-```
-
-```json
-{
-    "usuario": {
-        "email": "mario@email.com",
-        "fechaNacimiento": "1995-06-15",
-        "id": 1,
-        "nombreUsuario": "mario123"
-    },
-    "ultimosVinos": [
-        {
-            "fechaAdicion": "2026-04-14",
-            "id": 1,
-            "puntuacion": 9.5,
-            "usuario": { ... },
-            "vino": { "nombre": "Vega Sicilia Único", ... }
-        }
-    ],
-    "topVinos": [
-        {
-            "fechaAdicion": "2026-04-14",
-            "id": 1,
-            "puntuacion": 9.5,
-            "usuario": { ... },
-            "vino": { "nombre": "Vega Sicilia Único", ... }
-        }
-    ],
-    "topVinosAmigos": []
-}
-```
-
-Mario solo tiene un vino, por lo que aparece tanto entre sus últimos vinos como entre los mejor puntuados. La lista `topVinosAmigos` está vacía porque Ana, a quien sigue, todavía no ha puntuado ningún vino. En cuanto lo haga, sus mejores vinos aparecerán en esa lista.
-
-### 10. Paginación y navegación
-
-Con los dos usuarios creados, se pide una página de un solo elemento:
-
-```http
-GET /usuarios?size=1
-```
-
-```json
-{
-    "_embedded": { "usuarioList": [ { "id": 1, "nombreUsuario": "mario123", ... } ] },
-    "_links": {
-        "first": { "href": "http://localhost:8080/usuarios?page=0&size=1" },
-        "self":  { "href": "http://localhost:8080/usuarios?page=0&size=1" },
-        "next":  { "href": "http://localhost:8080/usuarios?page=1&size=1" },
-        "last":  { "href": "http://localhost:8080/usuarios?page=1&size=1" }
-    },
-    "page": { "number": 0, "size": 1, "totalElements": 2, "totalPages": 2 }
-}
-```
-
-Al seguir el enlace `next` se obtiene la segunda página, con `ana456`. En ella aparece el enlace `prev` y desaparece `next`, porque ya es la última página. El cliente puede recorrer todo el listado sin construir ninguna URL.
-
-### 11. Borrar un vino de la lista
-
-```http
-DELETE /usuarios/1/vinos/1
-```
-
-```http
-HTTP/1.1 204 No Content
-```
-
-Si la entrada no existe, la respuesta es `404 Not Found`.
+Para una prueba guiada completa, con la respuesta de cada operación (vinos, puntuaciones, seguimiento, recomendaciones...), consulta la sección «Probar la API» de [INSTALACION.md](INSTALACION.md#probar-la-api).
 
 ## Decisiones de diseño
 
