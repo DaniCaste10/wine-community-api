@@ -24,7 +24,7 @@ El flujo de uso habitual es el siguiente:
 3. Un usuario solicita seguir a otro y el destinatario acepta o rechaza la solicitud.
 4. Una vez establecido el seguimiento, el usuario puede consultar los vinos de las personas a las que sigue y recibe recomendaciones basadas en los mejores vinos de esos usuarios.
 
-El diseño sigue los principios REST vistos en la asignatura:
+El diseño sigue los siguientes principios REST:
 
 - **Recursos identificados por URI**, organizados de forma jerárquica (por ejemplo, `/usuarios/{usuarioId}/vinos`).
 - **Interfaz uniforme de HTTP**: `GET`, `POST`, `PUT` y `DELETE` con sus códigos de estado correspondientes (`200`, `201`, `204`, `400`, `404`).
@@ -32,7 +32,7 @@ El diseño sigue los principios REST vistos en la asignatura:
 - **Paginación y filtrado** en todos los listados, mediante parámetros de consulta.
 - **Persistencia** de los datos en una base de datos relacional PostgreSQL.
 
-La autenticación y la autorización quedan fuera del alcance de la práctica: el enunciado indica que se asumen ya resueltas.
+La autenticación y la autorización quedan fuera del alcance de este trabajo. Se asumen ya resueltas.
 
 ## Funcionalidades
 
@@ -112,8 +112,13 @@ Como ejemplo, esto es lo que ocurre con la petición `GET /usuarios/1/vinos?tipo
 
 ```
 winecommunity/
+├── .gitattributes
+├── .gitignore
 ├── pom.xml
-├── mvnw / mvnw.cmd                    Maven Wrapper
+├── mvnw
+├── mvnw.cmd
+├── .mvn/wrapper
+    └── maven-wrapper.properties
 └── src/
     ├── main/
     │   ├── java/com/sos/winecommunity/
