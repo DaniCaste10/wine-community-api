@@ -118,7 +118,7 @@ winecommunity/
 ├── mvnw
 ├── mvnw.cmd
 ├── .mvn/wrapper
-    └── maven-wrapper.properties
+│   └── maven-wrapper.properties
 └── src/
     ├── main/
     │   ├── java/com/sos/winecommunity/
@@ -232,7 +232,7 @@ Se separan las solicitudes de las relaciones consolidadas porque son conceptos d
 | Solicitudes de seguimiento | Subcolección | `/usuarios/{usuarioId}/solicitudes` |
 | Usuarios seguidos | Subcolección | `/usuarios/{usuarioId}/seguidos` |
 
-Las operaciones de aceptar y rechazar una solicitud, así como la modificación de la puntuación, se expresan con un segmento de verbo o de atributo en la URI (`/aceptar`, `/rechazar`, `/puntuacion`), siguiendo el enfoque de "tunneling" que pide el enunciado.
+Las operaciones de aceptar y rechazar una solicitud, así como la modificación de la puntuación, se expresan con un segmento de verbo o de atributo en la URI (`/aceptar`, `/rechazar`, `/puntuacion`), siguiendo el enfoque de "tunneling".
 
 ### Endpoints
 
@@ -348,7 +348,7 @@ Algunas consideraciones:
 
 - Solo se listan las solicitudes en estado `PENDIENTE`, de modo que una solicitud aceptada o rechazada deja de aparecer en `GET /usuarios/{usuarioId}/solicitudes`.
 - Tras aceptar, el solicitante ve al receptor en su lista de seguidos (`GET /usuarios/{solicitanteId}/seguidos`) y puede consultar sus vinos (`GET /usuarios/{solicitanteId}/seguidos/{receptorId}/vinos`).
-- Aceptar y rechazar se modelan como `PUT` sobre una URI con el verbo de la operación, tal y como pide el enunciado.
+- Aceptar y rechazar se modelan como `PUT` sobre una URI con el verbo de la operación.
 
 #### Modificar la puntuación de un vino
 
@@ -529,7 +529,7 @@ Para una prueba guiada completa, con la respuesta de cada operación (vinos, pun
 
 - **Las respuestas a `POST` no llevan cuerpo.** Se devuelve `201 Created` con la cabecera `Location` apuntando al recurso, o a la colección en la que se ha creado.
 - **El seguimiento se modela en dos entidades.** La solicitud (`SolicitudSeguimiento`) tiene un estado y un ciclo de vida; la relación consolidada (`Seguimiento`) solo se crea al aceptar la solicitud. Rechazar una solicitud no deja ninguna relación.
-- **Aceptar, rechazar y puntuar como `PUT` con verbo en la URI.** Cumplen el enfoque de "tunneling" del enunciado y dejan claro en la URL qué operación se realiza sobre el recurso.
+- **Aceptar, rechazar y puntuar como `PUT` con verbo en la URI.** Cumplen el enfoque de "tunneling" y dejan claro en la URL qué operación se realiza sobre el recurso.
 - **Filtros dinámicos con `@Query`.** Con seis filtros opcionales y combinables, escribir un método derivado por cada combinación sería inviable. Se usa una consulta con parámetros opcionales (`:param IS NULL OR ...`) que resuelve todas las combinaciones en una sola. Para que PostgreSQL pueda inferir el tipo de los parámetros nulos se utiliza `CAST` explícito, y en el listado de vinos las fechas ausentes se sustituyen en el servicio por un rango por defecto (del `1900-01-01` al `9999-12-31`).
 - **Filtrado y paginación en la base de datos**, no en memoria, mediante `Pageable` y consultas en el repositorio.
 - **Controladores y servicios separados por responsabilidad.** Las solicitudes de seguimiento y los usuarios seguidos tienen cada uno su controlador y su servicio.
