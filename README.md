@@ -10,8 +10,8 @@ API REST para una comunidad online de gestión y recomendación de vinos, desarr
 - [Arquitectura](#arquitectura)
 - [Modelo de datos](#modelo-de-datos)
 - [Diseño de la API](#diseño-de-la-api)
-- [Ejemplo rápido](#ejemplo-rápido)
 - [Decisiones de diseño](#decisiones-de-diseño)
+- [Instalación y ejecución](#instalación-y-ejecución)
 
 ## Descripción
 
@@ -303,13 +303,6 @@ Los espacios de los valores se escriben como `%20` en la URL (Postman lo hace au
 
 Seguir a otro usuario **no es inmediato**. Enviar una solicitud (`POST /usuarios/{usuarioId}/solicitudes`) solo crea una solicitud en estado `PENDIENTE`. La relación de seguimiento no existe hasta que el usuario destinatario la acepta.
 
-```mermaid
-stateDiagram-v2
-    [*] --> PENDIENTE: se envía la solicitud
-    PENDIENTE --> ACEPTADA: aceptar
-    PENDIENTE --> RECHAZADA: rechazar
-```
-
 El proceso completo, con dos usuarios, mario123 (id 1) y ana456 (id 2), es el siguiente:
 
 1. **Mario solicita seguir a Ana**: `POST /usuarios/1/solicitudes` con el cuerpo `{"seguidoId": 2}`.
@@ -326,23 +319,6 @@ El proceso completo, con dos usuarios, mario123 (id 1) y ana456 (id 2), es el si
 | **Efecto sobre el seguimiento** | Se crea la relación: el solicitante pasa a seguir al receptor (nueva fila en `seguidores`) | No se crea ninguna relación |
 | **Respuesta correcta** | `200 OK` con la solicitud actualizada | `200 OK` con la solicitud actualizada |
 | **Respuesta de error** | `404 Not Found` si la solicitud no existe | `404 Not Found` si la solicitud no existe |
-
-Esto es lo que ocurre internamente al aceptar una solicitud:
-
-```mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant CT as SolicitudSeguimientoControlador
-    participant S as SolicitudSeguimientoServicio
-    participant DB as PostgreSQL
-    C->>CT: PUT /usuarios/2/solicitudes/1/aceptar
-    CT->>S: aceptarSolicitud(1)
-    S->>DB: busca la solicitud
-    S->>DB: cambia el estado a ACEPTADA
-    S->>DB: inserta la relación en seguidores
-    S-->>CT: solicitud actualizada
-    CT-->>C: 200 OK con la solicitud
-```
 
 Algunas consideraciones:
 
@@ -471,60 +447,6 @@ Los enlaces se construyen en los **assemblers** (`RepresentationModelAssemblerSu
 | `400 Bad Request` | Alta de un usuario menor de edad. El cuerpo contiene el mensaje de error. |
 | `404 Not Found` | El recurso solicitado no existe (usuario, vino de la lista o solicitud), o un listado de usuarios no devuelve resultados. |
 
-## Ejemplo rápido
-
-Con la API en marcha en `http://localhost:8080` (las instrucciones de instalación y ejecución están en [INSTALACION.md](INSTALACION.md)), estas dos peticiones muestran su funcionamiento básico. Se pueden lanzar con Postman o con cualquier otro cliente HTTP.
-
-**1. Dar de alta un usuario**
-
-```http
-POST /usuarios
-Content-Type: application/json
-
-{
-    "nombreUsuario": "mario123",
-    "fechaNacimiento": "1995-06-15",
-    "email": "mario@email.com"
-}
-```
-
-```http
-HTTP/1.1 201 Created
-Location: http://localhost:8080/usuarios/1
-```
-
-La respuesta no lleva cuerpo: la cabecera `Location` indica la URI del usuario creado.
-
-**2. Listar usuarios filtrando por nombre**
-
-```http
-GET /usuarios?nombre=mar
-```
-
-```json
-{
-    "_embedded": {
-        "usuarioList": [
-            {
-                "_links": { ... },
-                "email": "mario@email.com",
-                "fechaNacimiento": "1995-06-15",
-                "id": 1,
-                "nombreUsuario": "mario123"
-            }
-        ]
-    },
-    "_links": {
-        "self": { "href": "http://localhost:8080/usuarios?nombre=mar&page=0&size=10" }
-    },
-    "page": { "number": 0, "size": 10, "totalElements": 1, "totalPages": 1 }
-}
-```
-
-El listado está paginado y cada usuario incluye enlaces a sus recursos relacionados (véase [Navegabilidad (HATEOAS) y paginación](#navegabilidad-hateoas-y-paginación)). Los listados de vinos admiten además filtros por fechas, tipo, bodega, origen, añada y uva (véase [Parámetros de consulta](#parámetros-de-consulta)).
-
-Para una prueba guiada completa, con la respuesta de cada operación (vinos, puntuaciones, seguimiento, recomendaciones...), consulta la sección «Probar la API» de [INSTALACION.md](INSTALACION.md#probar-la-api).
-
 ## Decisiones de diseño
 
 - **Las respuestas a `POST` no llevan cuerpo.** Se devuelve `201 Created` con la cabecera `Location` apuntando al recurso, o a la colección en la que se ha creado.
@@ -535,3 +457,7 @@ Para una prueba guiada completa, con la respuesta de cada operación (vinos, pun
 - **Controladores y servicios separados por responsabilidad.** Las solicitudes de seguimiento y los usuarios seguidos tienen cada uno su controlador y su servicio.
 - **Recomendaciones como recurso compuesto.** Agrupan datos de varias entidades (usuario, últimos vinos, mejores vinos propios y mejores vinos de los seguidos) sin una entidad propia, y se construyen en el controlador.
 - **Gestión de errores en los controladores.** Las excepciones del servicio se traducen a `404` o `400` con `try/catch`.
+
+## Instalación y ejecución
+
+Las instrucciones de instalación y ejecución están en [INSTALACION.md](INSTALACION.md), junto con una prueba guiada completa, con la respuesta de cada operación (vinos, puntuaciones, seguimiento, recomendaciones...).
